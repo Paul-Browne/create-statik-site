@@ -25,8 +25,8 @@ function imageMaker(obj){
                 file
                     .resize(obj.width, jimp.AUTO)
                     .quality(obj.quality)
-                    .write( reformatOutputDirectory(obj.dirOut, obj.width) + obj.fileName);
-                console.log(obj.dirOut + obj.fileName + " generated, total time elapsed " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                    .write(reformatOutputDirectory(obj.dirOut, obj.width) + obj.fileName);
+                console.log(reformatOutputDirectory(obj.dirOut, obj.width) + obj.fileName + " generated, total time elapsed " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
             }
         });
     }else if(!obj.width){
