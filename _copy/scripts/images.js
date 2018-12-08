@@ -26,6 +26,7 @@ function imageMaker(obj){
                     .resize(obj.width, jimp.AUTO)
                     .quality(obj.quality)
                     .write( reformatOutputDirectory(obj.dirOut, obj.width) + obj.fileName);
+                console.log(obj.dirOut + obj.fileName + " generated, total time elapsed " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
             }
         });
     }else if(!obj.width){
@@ -36,11 +37,10 @@ function imageMaker(obj){
                 file
                     .quality(obj.quality)
                     .write(obj.dirOut + obj.fileName);
+                console.log(obj.dirOut + obj.fileName + " generated, total time elapsed " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
             }
         });
     }
-    var newTime = Date.now() - timerStart;
-    console.log(obj.dirOut + obj.fileName + " generated, total time elapsed " + (newTime / 1000).toFixed(2) + " seconds" );
 }
 
 function readDirRecursive(inDirectory, outDirectory){
