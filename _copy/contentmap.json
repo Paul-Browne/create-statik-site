@@ -1,0 +1,22 @@
+{
+	"template-1": {
+		"html": "base",
+		"htmlClass": "[PH1] standard",
+		"head": "head",
+		"favicons": "head/favicons",
+		"meta": {
+			"engine": "mustache",
+			"template" : "templates/head/meta.mustache",
+			"data": "data/head/meta.json",
+			"object": "[PH1]"
+		},
+		"head-css":"head/css",
+		"head-js":"head/js",
+		"body": "body",
+		"header": "body/header",
+		"footer": "body/footer",
+		"body-js": "body/js",
+		"google-analytics": "body/google-analytics",
+		"main": "body/main/[PH1]"
+	}
+}
