@@ -165,9 +165,8 @@ function createFile(name, dir, obj) {
                         console.error(err);
                     }
                 });
-                var newTime = Date.now() - timerStart;
                 //console.log("https://localhost:8888/" + dirPath + (dirPath ? "/" : "") + name);
-                console.log(publicDirectoryName + dirPath + "/" + name + ".html generated, total time elapsed " + (newTime / 1000).toFixed(2) + " seconds");
+                console.log(publicDirectoryName + dirPath + "/" + name + ".html generated, total time elapsed " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
             })
         }
     }

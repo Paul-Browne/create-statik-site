@@ -3,7 +3,7 @@ var timerStart = Date.now();
 const fs = require('fs-extra');
 const env = require('dotenv');
 const mime = require('mime-types');
-const mkdirp = require('mkdirp');
+
 env.config();
 const publicDirectoryName = process.env.PUBLIC_DIR_NAME || 'public';
 const sourceDirectoryName = process.env.SOURCE_DIR_NAME || 'src';
@@ -18,8 +18,7 @@ function readDirRecursive(inDirectory, outDirectory){
 	    		  if (err){
 					return console.error(err)
 	    		  }else{
-	    		  	var newTime = Date.now() - timerStart;
-	    		  	console.log(outDirectory + name + " generated, total time elapsed " + (newTime / 1000).toFixed(2) + " seconds" );
+	    		  	console.log(outDirectory + name + " generated, total time elapsed " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
 	    		  }
 	    		})
 	    	}

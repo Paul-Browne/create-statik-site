@@ -1,60 +1,26 @@
-const fs = require('fs');
-const os = require('os');
-const http = require('http');
-const http2 = require('spdy');
-const serveStatic = require('serve-static');
-const compression = require('compression');
-const express = require('express');
+const fs = require('fs-extra');
+const path = require('path');
 const childProcess = require('child_process');
 const chokidar = require('chokidar');
+const mime = require('mime-types');
+const mkdirp = require('mkdirp');
 const env = require('dotenv');
 env.config();
+
+const jimp = require('jimp');
+const sizeOf = require('image-size');
+
+const uglifyJS = require("uglify-js");
+const babel = require("@babel/core");
+
+const postcss = require('postcss');
+const autoprefixer = require('autoprefixer');
+const cleanCSS = require('postcss-clean');
 
 const publicDirectoryName = process.env.PUBLIC_DIR_NAME || 'public';
 const sourceDirectoryName = process.env.SOURCE_DIR_NAME || 'src';
 const contentDirectoryName = process.env.CONTENT_DIR_NAME || 'content';
 const contentDirectoryPath = sourceDirectoryName + "/" + contentDirectoryName;
-
-function serverSetup(protocal) {
-    var app = express();
-    app.use(compression())
-    app.use(serveStatic(publicDirectoryName, {
-        'extensions': ['html'],
-        'maxAge': 3600000   // 1 hour
-    }))
-    if (protocal === "https") {
-        http2.createServer({
-            key: fs.readFileSync(os.homedir() + process.env.SSL_KEY_PATH, 'utf8'),
-            cert: fs.readFileSync(os.homedir() + process.env.SSL_CRT_PATH, 'utf8')
-        }, app).listen(8888);
-    } else {
-        http.createServer(app).listen(8888);
-    }
-    console.log(protocal + "://localhost:8888");
-}
-
-
-function startServer(){
-    fs.open('./.env', 'r', (err) => {
-        if (err) {
-            if (err.code === 'ENOENT') {
-                console.log("no .env file found");
-                serverSetup("http");
-            }
-        } else {
-            fs.readFile('./.env', 'utf8', (err, data) => {
-                if (data.indexOf('SSL_CRT_PATH') < 0 || data.indexOf('SSL_KEY_PATH') < 0) {
-                    console.log("no SSL_CRT_PATH and/or SSL_KEY_PATH found in .env file");
-                    serverSetup("http");
-                } else {
-                    serverSetup("https");
-                }
-            })
-        }
-    })
-}
-
-startServer();
 
 function runScript(scriptPath, callback) {
     var invoked = false;
@@ -71,32 +37,180 @@ function runScript(scriptPath, callback) {
         callback(err);
     });
 }
-
-function watching(watchDir, scriptPath, ignoreDir){
-    var watched = chokidar.watch(watchDir, {
-        ignored: ignoreDir,
+function reformatImagesOutputDirectory(dirOut, width){
+    var out = dirOut.replace("images", "images/" + width);
+    return out;
+}
+function imageMaker(obj){
+    if(obj.width && sizeOf(obj.dirIn).width >= obj.width ){
+        jimp.read(obj.dirIn, (err, file) => {
+            if (err) {
+                console.log(err);
+            } else {
+                file
+                    .resize(obj.width, jimp.AUTO)
+                    .quality(obj.quality)
+                    .write(reformatImagesOutputDirectory(obj.dirOut, obj.width));
+                console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ( (Date.now() - obj.startTime) / 1000).toFixed(2) + " seconds" );
+            }
+        });
+    }else if(!obj.width){
+        jimp.read(obj.dirIn, (err, file) => {
+            if (err) {
+                console.log(err);
+            } else {
+                file
+                    .quality(obj.quality)
+                    .write(obj.dirOut);
+                console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ( (Date.now() - obj.startTime) / 1000).toFixed(2) + " seconds" );
+            }
+        });
+    }
+}
+function watching(){
+    var watched = chokidar.watch([sourceDirectoryName, 'contentmap.json', 'sitemap.json'], {
         persistent: true,
         ignoreInitial: true
     });
-    runScript(scriptPath, function(err) {
-        if (err) {
-            console.error(err);
+    watched.on('all', (event, pathname) => {
+        if(event !== "unlink" && event !== "unlinkDir"){
+            var timerStart = Date.now();
+            var filename = path.basename(pathname);
+            if (pathname.indexOf(contentDirectoryPath) === 0 || pathname.indexOf('contentmap.json') === 0 || pathname.indexOf('sitemap.json') === 0) {
+                // src/content
+                // contentmap.json
+                // sitemap.json
+                runScript("./scripts/html.js", function(err) {
+                    if (err) {
+                        console.error(err);
+                    }
+                });
+            }else if (pathname.indexOf(sourceDirectoryName + "/css") === 0) {
+                // src/css
+                if(mime.lookup(filename) === "text/css"){
+                    // .css
+                    var source = fs.readFileSync(pathname, 'utf8');
+                    postcss([
+                        autoprefixer({
+                            browsers: [
+                                "> 0.5%",
+                                "IE 10"
+                            ]
+                        }),
+                        cleanCSS()
+                    ])
+                    .process(source, { from: pathname, to: pathname.replace(sourceDirectoryName, publicDirectoryName) })
+                    .then(result => {
+                        mkdirp(path.dirname(pathname.replace(sourceDirectoryName, publicDirectoryName)), function(err) {
+                            if (err) {
+                                console.error(err);
+                            }else{
+                                fs.writeFile(pathname.replace(sourceDirectoryName, publicDirectoryName), result.css, function(err) {
+                                    if (err) {
+                                        console.error(err);
+                                    }else{
+                                        console.log(pathname.replace(sourceDirectoryName, publicDirectoryName) + " generated in " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                                    }
+                                });
+                            }
+                        });
+                    })
+                }
+            }else if (pathname.indexOf(sourceDirectoryName + "/js") === 0) {
+                // src/js
+                if(mime.lookup(filename) === "application/javascript"){
+                    // .js
+                    var transform = babel.transformSync(fs.readFileSync(pathname, 'utf8'), {filename}).code;
+                    var result = uglifyJS.minify(transform);
+                    mkdirp(path.dirname(pathname.replace(sourceDirectoryName, publicDirectoryName)), function(err) {
+                        if (err) {
+                            console.error(err);
+                        }else{
+                            fs.writeFile(pathname.replace(sourceDirectoryName, publicDirectoryName), result.code, function(err) {
+                                if (err) {
+                                    console.error(err);
+                                }else{
+                                    console.log(pathname.replace(sourceDirectoryName, publicDirectoryName) + " generated in " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                                }
+                            });
+                        }
+                    });
+                }
+            }else if (pathname.indexOf(sourceDirectoryName + "/images") === 0) {
+                // src/images
+                if(mime.lookup(filename) === "image/jpeg" || mime.lookup(filename) === "image/png" || mime.lookup(filename) === "image/gif"){
+                    // .jpg, .png, .gif
+                    imageMaker({
+                        startTime: timerStart,
+                        dirIn: pathname,
+                        dirOut: pathname.replace(sourceDirectoryName, publicDirectoryName),
+                        width: 40,
+                        quality: 0
+                    });
+                    imageMaker({
+                        startTime: timerStart,
+                        dirIn: pathname,
+                        dirOut: pathname.replace(sourceDirectoryName, publicDirectoryName),
+                        width: 400,
+                        quality: 75
+                    });
+                    imageMaker({
+                        startTime: timerStart,
+                        dirIn: pathname,
+                        dirOut: pathname.replace(sourceDirectoryName, publicDirectoryName),
+                        width: 800,
+                        quality: 75
+                    });
+                    imageMaker({
+                        startTime: timerStart,
+                        dirIn: pathname,
+                        dirOut: pathname.replace(sourceDirectoryName, publicDirectoryName),
+                        width: 1200,
+                        quality: 75
+                    });
+                    imageMaker({
+                        startTime: timerStart,
+                        dirIn: pathname,
+                        dirOut: pathname.replace(sourceDirectoryName, publicDirectoryName),
+                        width: 1600,
+                        quality: 75
+                    });
+                    imageMaker({
+                        startTime: timerStart,
+                        dirIn: pathname,
+                        dirOut: pathname.replace(sourceDirectoryName, publicDirectoryName),
+                        width: 2000,
+                        quality: 75
+                    });
+                }else if (mime.lookup(filename) === "image/svg+xml") {
+                    // .svg
+                    // TODO SVG OPTIMIZATION
+                    fs.copy(pathname, pathname.replace(sourceDirectoryName, publicDirectoryName), err => {
+                        if (err) {
+                            return console.error(err)
+                        }else{
+                            console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                        }
+                    })
+                }
+            }else if (pathname.indexOf(sourceDirectoryName) !== 0) {
+                // copy from root
+                fs.copy(pathname, pathname.replace(sourceDirectoryName, publicDirectoryName), err => {
+                    if (err) {
+                        return console.error(err)
+                    }else{
+                        console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                    }
+                })
+            }
         }
     });
-    watched.on('all', (event, path) => {
-        runScript(scriptPath, function(err) {
-            if (err) {
-                console.error(err);
-            }
-            console.log("file: " + path + " " + event);
-        });
-    });
 }
-
-watching(sourceDirectoryName + '/js', 'scripts/js.js');
-watching(sourceDirectoryName + '/css', 'scripts/css.js');
-watching(sourceDirectoryName + '/images', 'scripts/images.js');
-watching([contentDirectoryPath, "contentmap.json", "sitemap.json"], 'scripts/build.js');
-watching(sourceDirectoryName, 'scripts/other.js', sourceDirectoryName + "/*/*.*");
+watching();
 
 
+runScript("./scripts/server.js", function(err) {
+    if (err) {
+        console.error(err);
+    }
+});

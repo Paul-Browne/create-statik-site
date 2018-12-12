@@ -15,7 +15,6 @@ const sourceDirectoryName = process.env.SOURCE_DIR_NAME || 'src';
 const contentDirectoryName = process.env.CONTENT_DIR_NAME || 'content';
 const contentDirectoryPath = sourceDirectoryName + "/" + contentDirectoryName;
 
-// todo sass/less
 function readDirRecursive(inDirectory, outDirectory){
     fs.readdir(inDirectory, (err, filesOrDirectories) => {
         filesOrDirectories.forEach(name => {
@@ -44,8 +43,7 @@ function readDirRecursive(inDirectory, outDirectory){
                                     if (err) {
                                         console.error(err);
                                     }else{
-                                        var newTime = Date.now() - timerStart;
-                                        console.log(outDirectory + name + " generated, total time elapsed " + (newTime / 1000).toFixed(2) + " seconds" );
+                                        console.log(outDirectory + name + " generated, total time elapsed " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
                                     }
                                 });
                             }

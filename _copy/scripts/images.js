@@ -11,13 +11,13 @@ const sourceDirectoryName = process.env.SOURCE_DIR_NAME || 'src';
 const contentDirectoryName = process.env.CONTENT_DIR_NAME || 'content';
 const contentDirectoryPath = sourceDirectoryName + "/" + contentDirectoryName;
 
-function reformatOutputDirectory(dirOut, width){
+function reformatOutputDirectory(dirOut, width) {
     var out = dirOut.replace("images", "images/" + width);
     return out;
 }
 
-function imageMaker(obj){
-    if(obj.width && sizeOf(obj.dirIn + obj.fileName).width >= obj.width ){
+function imageMaker(obj) {
+    if (obj.width && sizeOf(obj.dirIn + obj.fileName).width >= obj.width) {
         jimp.read(obj.dirIn + obj.fileName, (err, file) => {
             if (err) {
                 console.log(err);
@@ -26,10 +26,10 @@ function imageMaker(obj){
                     .resize(obj.width, jimp.AUTO)
                     .quality(obj.quality)
                     .write(reformatOutputDirectory(obj.dirOut, obj.width) + obj.fileName);
-                console.log(reformatOutputDirectory(obj.dirOut, obj.width) + obj.fileName + " generated, total time elapsed " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                console.log(reformatOutputDirectory(obj.dirOut, obj.width) + obj.fileName + " generated, total time elapsed " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
             }
         });
-    }else if(!obj.width){
+    } else if (!obj.width) {
         jimp.read(obj.dirIn + obj.fileName, (err, file) => {
             if (err) {
                 console.log(err);
@@ -37,18 +37,18 @@ function imageMaker(obj){
                 file
                     .quality(obj.quality)
                     .write(obj.dirOut + obj.fileName);
-                console.log(obj.dirOut + obj.fileName + " generated, total time elapsed " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                console.log(obj.dirOut + obj.fileName + " generated, total time elapsed " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
             }
         });
     }
 }
 
-function readDirRecursive(inDirectory, outDirectory){
+function readDirRecursive(inDirectory, outDirectory) {
     fs.readdir(inDirectory, (err, filesOrDirectories) => {
         filesOrDirectories.forEach(name => {
-            if(fs.lstatSync(inDirectory + name).isDirectory()){
+            if (fs.lstatSync(inDirectory + name).isDirectory()) {
                 readDirRecursive(inDirectory + name + "/", outDirectory + name + "/");
-            }else{
+            } else {
                 if (mime.lookup(name) === "image/jpeg" || mime.lookup(name) === "image/png" || mime.lookup(name) === "image/gif") { // todo check gif
                     imageMaker({
                         dirIn: inDirectory,
@@ -98,6 +98,15 @@ function readDirRecursive(inDirectory, outDirectory){
                         fileName: name,
                         quality: 80
                     });
+                } else if (mime.lookup(name) === "image/svg+xml") {
+                    fs.copy(inDirectory + name, outDirectory + name, err => {
+                        if (err) {
+                            return console.error(err)
+                        } else {
+                            var newTime = Date.now() - timerStart;
+                            console.log(outDirectory + name + " generated, total time elapsed " + (newTime / 1000).toFixed(2) + " seconds");
+                        }
+                    })
                 }
             }
         });
