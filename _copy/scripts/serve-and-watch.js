@@ -17,6 +17,9 @@ const postcss = require('postcss');
 const autoprefixer = require('autoprefixer');
 const cleanCSS = require('postcss-clean');
 
+const sass = require('node-sass');
+const less = require('less');
+
 const publicDirectoryName = process.env.PUBLIC_DIR_NAME || 'public';
 const sourceDirectoryName = process.env.SOURCE_DIR_NAME || 'src';
 const contentDirectoryName = process.env.CONTENT_DIR_NAME || 'content';
@@ -37,12 +40,14 @@ function runScript(scriptPath, callback) {
         callback(err);
     });
 }
-function reformatImagesOutputDirectory(dirOut, width){
+
+function reformatImagesOutputDirectory(dirOut, width) {
     var out = dirOut.replace("images", "images/" + width);
     return out;
 }
-function imageMaker(obj){
-    if(obj.width && sizeOf(obj.dirIn).width >= obj.width ){
+
+function imageMaker(obj) {
+    if (obj.width && sizeOf(obj.dirIn).width >= obj.width) {
         jimp.read(obj.dirIn, (err, file) => {
             if (err) {
                 console.log(err);
@@ -51,10 +56,10 @@ function imageMaker(obj){
                     .resize(obj.width, jimp.AUTO)
                     .quality(obj.quality)
                     .write(reformatImagesOutputDirectory(obj.dirOut, obj.width));
-                console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ( (Date.now() - obj.startTime) / 1000).toFixed(2) + " seconds" );
+                console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ((Date.now() - obj.startTime) / 1000).toFixed(2) + " seconds");
             }
         });
-    }else if(!obj.width){
+    } else if (!obj.width) {
         jimp.read(obj.dirIn, (err, file) => {
             if (err) {
                 console.log(err);
@@ -62,18 +67,19 @@ function imageMaker(obj){
                 file
                     .quality(obj.quality)
                     .write(obj.dirOut);
-                console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ( (Date.now() - obj.startTime) / 1000).toFixed(2) + " seconds" );
+                console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ((Date.now() - obj.startTime) / 1000).toFixed(2) + " seconds");
             }
         });
     }
 }
-function watching(){
+
+function watching() {
     var watched = chokidar.watch([sourceDirectoryName, 'contentmap.json', 'sitemap.json'], {
         persistent: true,
         ignoreInitial: true
     });
     watched.on('all', (event, pathname) => {
-        if(event !== "unlink" && event !== "unlinkDir"){
+        if (event !== "unlink" && event !== "unlinkDir") {
             var timerStart = Date.now();
             var filename = path.basename(pathname);
             if (pathname.indexOf(contentDirectoryPath) === 0 || pathname.indexOf('contentmap.json') === 0 || pathname.indexOf('sitemap.json') === 0) {
@@ -85,9 +91,9 @@ function watching(){
                         console.error(err);
                     }
                 });
-            }else if (pathname.indexOf(sourceDirectoryName + "/css") === 0) {
+            } else if (pathname.indexOf(sourceDirectoryName + "/css") === 0) {
                 // src/css
-                if(mime.lookup(filename) === "text/css"){
+                if (mime.lookup(filename) === "text/css") {
                     // .css
                     var source = fs.readFileSync(pathname, 'utf8');
                     postcss([
@@ -104,41 +110,113 @@ function watching(){
                         mkdirp(path.dirname(pathname.replace(sourceDirectoryName, publicDirectoryName)), function(err) {
                             if (err) {
                                 console.error(err);
-                            }else{
+                            } else {
                                 fs.writeFile(pathname.replace(sourceDirectoryName, publicDirectoryName), result.css, function(err) {
                                     if (err) {
                                         console.error(err);
-                                    }else{
-                                        console.log(pathname.replace(sourceDirectoryName, publicDirectoryName) + " generated in " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                                    } else {
+                                        console.log(pathname.replace(sourceDirectoryName, publicDirectoryName) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
                                     }
                                 });
                             }
                         });
                     })
                 }
-            }else if (pathname.indexOf(sourceDirectoryName + "/js") === 0) {
+            } else if (pathname.indexOf(sourceDirectoryName + "/scss") === 0 || pathname.indexOf(sourceDirectoryName + "/sass") === 0) {
+                // scss/sass
+                if (mime.lookup(filename) === "text/x-scss" || mime.lookup(filename) === "text/x-sass") {
+                    sass.render({
+                        file: pathname,
+                    }, function(err, result) {
+                        if(err){
+                            console.error(err);
+                        }else{
+                            postcss([
+                                autoprefixer({
+                                    browsers: [
+                                        "> 0.5%",
+                                        "IE 10"
+                                    ]
+                                }),
+                                cleanCSS()
+                            ])
+                            .process(result.css, { from: pathname, to: pathname.replace(/\/s(a|c)ss\//, "/css/").replace(/\.s(a|c)ss/, ".css").replace(sourceDirectoryName, publicDirectoryName) })
+                            .then(res => {
+                                mkdirp(path.dirname(pathname.replace(/\/s(a|c)ss\//, "/css/").replace(/\.s(a|c)ss/, ".css").replace(sourceDirectoryName, publicDirectoryName)), function(err) {
+                                    if (err) {
+                                        console.error(err);
+                                    } else {
+                                        fs.writeFile(pathname.replace(/\/s(a|c)ss\//, "/css/").replace(/\.s(a|c)ss/, ".css").replace(sourceDirectoryName, publicDirectoryName), res.css, function(err) {
+                                            if (err) {
+                                                console.error(err);
+                                            } else {
+                                                console.log(pathname.replace(/\/s(a|c)ss\//, "/css/").replace(/\.s(a|c)ss/, ".css").replace(sourceDirectoryName, publicDirectoryName) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
+                                            }
+                                        });
+                                    }
+                                });
+                            })                       
+                        }
+                    });
+                }
+            } else if (pathname.indexOf(sourceDirectoryName + "/less") === 0) {
+                // less
+                if (mime.lookup(filename) === "text/less") {
+                    less.render(fs.readFileSync(pathname, 'utf8'), function(err, result) {
+                        if(err){
+                            console.error(err);
+                        }else{
+                            postcss([
+                                autoprefixer({
+                                    browsers: [
+                                        "> 0.5%",
+                                        "IE 10"
+                                    ]
+                                }),
+                                cleanCSS()
+                            ])
+                            .process(result.css, { from: pathname, to: pathname.replace("/less/", "/css/").replace(".less", ".css").replace(sourceDirectoryName, publicDirectoryName) })
+                            .then(res => {
+                                mkdirp(path.dirname(pathname.replace("/less/", "/css/").replace(".less", ".css").replace(sourceDirectoryName, publicDirectoryName)), function(err) {
+                                    if (err) {
+                                        console.error(err);
+                                    } else {
+                                        fs.writeFile(pathname.replace("/less/", "/css/").replace(".less", ".css").replace(sourceDirectoryName, publicDirectoryName), res.css, function(err) {
+                                            if (err) {
+                                                console.error(err);
+                                            } else {
+                                                console.log(pathname.replace("/less/", "/css/").replace(".less", ".css").replace(sourceDirectoryName, publicDirectoryName) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
+                                            }
+                                        });
+                                    }
+                                });
+                            })                         
+                        }
+                    })
+                }
+            } else if (pathname.indexOf(sourceDirectoryName + "/js") === 0) {
                 // src/js
-                if(mime.lookup(filename) === "application/javascript"){
+                if (mime.lookup(filename) === "application/javascript") {
                     // .js
-                    var transform = babel.transformSync(fs.readFileSync(pathname, 'utf8'), {filename}).code;
+                    var transform = babel.transformSync(fs.readFileSync(pathname, 'utf8'), { filename }).code;
                     var result = uglifyJS.minify(transform);
                     mkdirp(path.dirname(pathname.replace(sourceDirectoryName, publicDirectoryName)), function(err) {
                         if (err) {
                             console.error(err);
-                        }else{
+                        } else {
                             fs.writeFile(pathname.replace(sourceDirectoryName, publicDirectoryName), result.code, function(err) {
                                 if (err) {
                                     console.error(err);
-                                }else{
-                                    console.log(pathname.replace(sourceDirectoryName, publicDirectoryName) + " generated in " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                                } else {
+                                    console.log(pathname.replace(sourceDirectoryName, publicDirectoryName) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
                                 }
                             });
                         }
                     });
                 }
-            }else if (pathname.indexOf(sourceDirectoryName + "/images") === 0) {
+            } else if (pathname.indexOf(sourceDirectoryName + "/images") === 0) {
                 // src/images
-                if(mime.lookup(filename) === "image/jpeg" || mime.lookup(filename) === "image/png" || mime.lookup(filename) === "image/gif"){
+                if (mime.lookup(filename) === "image/jpeg" || mime.lookup(filename) === "image/png" || mime.lookup(filename) === "image/gif") {
                     // .jpg, .png, .gif
                     imageMaker({
                         startTime: timerStart,
@@ -182,24 +260,30 @@ function watching(){
                         width: 2000,
                         quality: 75
                     });
-                }else if (mime.lookup(filename) === "image/svg+xml") {
+                    imageMaker({
+                        startTime: timerStart,
+                        dirIn: pathname,
+                        dirOut: pathname.replace(sourceDirectoryName, publicDirectoryName),
+                        quality: 75
+                    });
+                } else if (mime.lookup(filename) === "image/svg+xml") {
                     // .svg
                     // TODO SVG OPTIMIZATION
                     fs.copy(pathname, pathname.replace(sourceDirectoryName, publicDirectoryName), err => {
                         if (err) {
                             return console.error(err)
-                        }else{
-                            console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                        } else {
+                            console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
                         }
                     })
                 }
-            }else if (pathname.indexOf(sourceDirectoryName) !== 0) {
+            } else if (pathname.indexOf(sourceDirectoryName) !== 0) {
                 // copy from root
                 fs.copy(pathname, pathname.replace(sourceDirectoryName, publicDirectoryName), err => {
                     if (err) {
                         return console.error(err)
-                    }else{
-                        console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ( (Date.now() - timerStart) / 1000).toFixed(2) + " seconds" );
+                    } else {
+                        console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
                     }
                 })
             }
