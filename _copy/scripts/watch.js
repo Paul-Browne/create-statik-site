@@ -9,6 +9,7 @@ env.config();
 
 const jimp = require('jimp');
 const sizeOf = require('image-size');
+const svgo = require('svgo');
 
 const uglifyJS = require("uglify-js");
 const babel = require("@babel/core");
@@ -71,14 +72,6 @@ function imageMaker(obj) {
             }
         });
     }
-}
-
-function serve(){
-    runScript("./scripts/server.js", function(err) {
-        if (err) {
-            console.error(err);
-        }
-    });
 }
 
 function watching() {
@@ -276,14 +269,90 @@ function watching() {
                     });
                 } else if (mime.lookup(filename) === "image/svg+xml") {
                     // .svg
-                    // TODO SVG OPTIMIZATION
-                    fs.copy(pathname, pathname.replace(sourceDirectoryName, publicDirectoryName), err => {
-                        if (err) {
-                            console.error(err)
-                        } else {
-                            console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
-                        }
-                    })
+                    var svgoOpts = new svgo({
+                        plugins: [{
+                            cleanupAttrs: true
+                        }, {
+                            removeDoctype: true
+                        }, {
+                            removeXMLProcInst: true
+                        }, {
+                            removeComments: true
+                        }, {
+                            removeMetadata: true
+                        }, {
+                            removeTitle: true
+                        }, {
+                            removeDesc: true
+                        }, {
+                            removeUselessDefs: true
+                        }, {
+                            removeEditorsNSData: true
+                        }, {
+                            removeEmptyAttrs: true
+                        }, {
+                            removeHiddenElems: true
+                        }, {
+                            removeEmptyText: true
+                        }, {
+                            removeEmptyContainers: true
+                        }, {
+                            removeViewBox: false
+                        }, {
+                            cleanupEnableBackground: true
+                        }, {
+                            convertStyleToAttrs: true
+                        }, {
+                            convertColors: true
+                        }, {
+                            convertPathData: true
+                        }, {
+                            convertTransform: true
+                        }, {
+                            removeUnknownsAndDefaults: true
+                        }, {
+                            removeNonInheritableGroupAttrs: true
+                        }, {
+                            removeUselessStrokeAndFill: true
+                        }, {
+                            removeUnusedNS: true
+                        }, {
+                            cleanupIDs: true
+                        }, {
+                            cleanupNumericValues: true
+                        }, {
+                            moveElemsAttrsToGroup: true
+                        }, {
+                            moveGroupAttrsToElems: true
+                        }, {
+                            collapseGroups: true
+                        }, {
+                            removeRasterImages: false
+                        }, {
+                            mergePaths: true
+                        }, {
+                            convertShapeToPath: true
+                        }, {
+                            sortAttrs: true
+                        }, {
+                            removeDimensions: true
+                        }]
+                    });
+                    svgoOpts.optimize(fs.readFileSync(pathname, 'utf8')).then(result => {
+                        mkdirp(path.dirname(pathname.replace(sourceDirectoryName, publicDirectoryName)), function(err) {
+                            if (err) {
+                                console.error(err);
+                            } else {
+                                fs.writeFile(pathname.replace(sourceDirectoryName, publicDirectoryName), result.data, function(err) {
+                                    if (err) {
+                                        console.error(err);
+                                    } else {
+                                        console.log(pathname.replace(sourceDirectoryName, publicDirectoryName) + " generated, total time elapsed " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
+                                    }
+                                });
+                            }
+                        });
+                    });
                 }
             } else {
                 fs.copy(pathname, pathname.replace(sourceDirectoryName, publicDirectoryName), err => {
@@ -299,4 +368,4 @@ function watching() {
 }
 
 watching();
-serve();
+
