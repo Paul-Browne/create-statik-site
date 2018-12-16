@@ -73,6 +73,14 @@ function imageMaker(obj) {
     }
 }
 
+function serve(){
+    runScript("./scripts/server.js", function(err) {
+        if (err) {
+            console.error(err);
+        }
+    });
+}
+
 function watching() {
     var watched = chokidar.watch([sourceDirectoryName, 'contentmap.json', 'sitemap.json'], {
         persistent: true,
@@ -271,30 +279,36 @@ function watching() {
                     // TODO SVG OPTIMIZATION
                     fs.copy(pathname, pathname.replace(sourceDirectoryName, publicDirectoryName), err => {
                         if (err) {
-                            return console.error(err)
+                            console.error(err)
                         } else {
                             console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
                         }
                     })
                 }
-            } else if (pathname.indexOf(sourceDirectoryName) !== 0) {
-                // copy from root
+            } else {
                 fs.copy(pathname, pathname.replace(sourceDirectoryName, publicDirectoryName), err => {
                     if (err) {
-                        return console.error(err)
+                        console.error(err)
                     } else {
-                        console.log(reformatImagesOutputDirectory(obj.dirOut, obj.width) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
+                        console.log(pathname.replace(sourceDirectoryName, publicDirectoryName) + " generated in " + ((Date.now() - timerStart) / 1000).toFixed(2) + " seconds");
                     }
                 })
             }
         }
     });
 }
-watching();
 
 
-runScript("./scripts/server.js", function(err) {
-    if (err) {
-        console.error(err);
+
+
+
+fs.readdir(publicDirectoryName, (err, files) => {
+    if(err){
+        console.log(err);
+    }else{
+        watching();
+        serve();
     }
-});
+})
+
+

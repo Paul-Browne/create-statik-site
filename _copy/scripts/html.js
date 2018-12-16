@@ -201,7 +201,7 @@ function jsonWalker(obj, lvl) {
     }
 }
 
-function build() {
+function buildHtml() {
     fs.readFile('sitemap.json', 'utf8', function(err, data) {
         if (err) {
             console.error(err);
@@ -218,4 +218,4 @@ function build() {
 }
 
 
-build();
+buildHtml();
