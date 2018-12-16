@@ -298,17 +298,5 @@ function watching() {
     });
 }
 
-
-
-
-
-fs.readdir(publicDirectoryName, (err, files) => {
-    if(err){
-        console.log(err);
-    }else{
-        watching();
-        serve();
-    }
-})
-
-
+watching();
+serve();

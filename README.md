@@ -11,6 +11,5 @@ After installation do...
 ```
 cd project-name
 npm install
-npm run build
-npm run start
+npm start
 ```
