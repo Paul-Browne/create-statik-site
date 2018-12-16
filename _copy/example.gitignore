@@ -1,3 +1,6 @@
+# this is an example of a node environment .gitignore
+# reanme this from "example.gitignore" to ".gitignore"
+
 # Logs
 logs
 *.log

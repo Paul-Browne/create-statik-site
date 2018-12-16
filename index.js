@@ -8,6 +8,5 @@ console.log("to get started simply...");
 console.log(" ");
 console.log("cd " + process.argv[2]);
 console.log("npm install");
-console.log("npm run build");
-console.log("npm run start");
+console.log("npm start");
 console.log(" ");
