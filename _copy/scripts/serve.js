@@ -36,7 +36,7 @@ function startServer(){
             }
         } else {
             fs.readFile('./.env', 'utf8', (err, data) => {
-                if (data.indexOf('SSL_CRT_PATH') < 0 || data.indexOf('SSL_KEY_PATH') < 0) {
+                if (data.indexOf('SSL_CRT_PATH') < 0 || data.indexOf('SSL_KEY_PATH') < 0 || data.indexOf('#SSL_CRT_PATH') > 0 || data.indexOf('# SSL_CRT_PATH') > 0 || data.indexOf('#SSL_KEY_PATH') > 0 || data.indexOf('# SSL_KEY_PATH') > 0) {
                     console.log("no SSL_CRT_PATH and/or SSL_KEY_PATH found in .env file");
                     serverSetup("http");
                 } else {
