@@ -171,6 +171,14 @@ function createFile(name, dir, obj) {
         generateHTML(html).then(out => {
             html = removeUnusedPlaceholders(out);
             html = replacePlaceholdersWithDefaults(html);
+            html = minify(html, {
+                removeAttributeQuotes: false,
+                collapseWhitespace: true,
+                minifyCSS: true,
+                minifyJS: true,
+                removeComments: true,
+                decodeEntities: true
+            });
             fs.writeFile(publicDirectoryName + dirPath + "/" + name, html, function(err) {
                 if (err) {
                     console.error(err);
