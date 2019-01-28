@@ -29,7 +29,7 @@ function _request(url) {
             if (!error && response.statusCode === 200) {
                 resolve(body);
             } else {
-                reject(error);
+                reject(url);
             }
         })
     })
@@ -72,7 +72,7 @@ function isExternal(path) {
     }
 }
 
-async function generateHTML(inHTML){
+async function generateHTML(inHTML, temp){
     var output;
     for (var key in inHTML) {
         var string = new RegExp("\\[\\[" + inHTML[key].replace + "(\\|\\|.*?\\]\\]\|\\]\\])");
@@ -81,23 +81,51 @@ async function generateHTML(inHTML){
         var data;
         if (inHTML[key].replace === "html") {
             if (isExternal(inHTML[key].content)) {
-                output = await _request(inHTML[key].content);
+                try {
+                    output = await _request(inHTML[key].content);
+                } catch(e) {
+                    console.log('\x1b[31m%s\x1b[0m',"error in " + temp + " " + e + " not found");
+                }
             } else {
-                output = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].content + ".html", 'utf8');
+                try {
+                    output = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].content + ".html", 'utf8');
+                } catch(e) {
+                    console.log('\x1b[31m%s\x1b[0m',"error in " + temp + " " + contentDirectoryPath + "/" + inHTML[key].content + ".html" + " not found");
+                }
             }
         }else if(inHTML[key].engine || inHTML[key].data) {
             if (isExternal(inHTML[key].content)) {
-                template = await _request(inHTML[key].content);
+                try {
+                    template = await _request(inHTML[key].content);
+                } catch(e) {
+                    console.log('\x1b[31m%s\x1b[0m',"error in " + temp + " " + e + " not found");
+                }
             } else {
-                template = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].content, 'utf8');
+                try {
+                    template = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].content, 'utf8');
+                } catch(e) {
+                    console.log('\x1b[31m%s\x1b[0m',"error in " + temp + " " + contentDirectoryPath + "/" + inHTML[key].content + " not found");
+                }
             }
             if (isExternal(inHTML[key].data)) {
-                data = await _request(inHTML[key].data);
+                try {
+                    data = await _request(inHTML[key].data);
+                } catch(e) {
+                    console.log('\x1b[31m%s\x1b[0m',"error in " + temp + " " + e + " not found");
+                }
             } else {
-                data = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].data, 'utf8');
+                try {
+                    data = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].data, 'utf8');
+                } catch(e) {
+                    console.log('\x1b[31m%s\x1b[0m',"error in " + temp + " " + contentDirectoryPath + "/" + inHTML[key].data + " not found");
+                }
             }
             if (inHTML[key].object) {
-                data = JSON.parse(data)[inHTML[key].object];
+                if(JSON.parse(data)[inHTML[key].object]){
+                    data = JSON.parse(data)[inHTML[key].object];
+                }else{
+                    console.log('\x1b[31m%s\x1b[0m',"error in " + temp + " object: '" + inHTML[key].object + "' not found in " + inHTML[key].data);
+                }
             } else {
                 data = JSON.parse(data);
             }
@@ -120,6 +148,8 @@ async function generateHTML(inHTML){
                     fileContents = template(data);
                 } else if (inHTML[key].engine === "art") {
                     fileContents = art.render(template, data);
+                }else{
+                    console.log('\x1b[31m%s\x1b[0m',"error in " + temp + " no such template engine named: " + inHTML[key].engine);
                 }
             } else {
                 fileContents = mustache.render(template, data);
@@ -127,11 +157,18 @@ async function generateHTML(inHTML){
         }else {
             try {
                 if (isExternal(inHTML[key].content)) {
-                    fileContents = await _request(inHTML[key].content);
+                    try {
+                        fileContents = await _request(inHTML[key].content);
+                    } catch(e) {
+                        console.log('\x1b[31m%s\x1b[0m',"error in " + temp + " " + e + " not found");
+                    }
                 } else {
                     fileContents = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].content + ".html", 'utf8');
                 }
             } catch (err) {
+                if(~inHTML[key].content.indexOf("/")){
+                    console.log('\x1b[35m%s\x1b[0m',"warning in " + temp + " " + inHTML[key].content + " looks like a path, but " + contentDirectoryPath + "/" + inHTML[key].content + ".html wasn't found");
+                }
                 fileContents = inHTML[key].content;
             }
         }
@@ -168,7 +205,7 @@ function createFile(name, dir, obj) {
     var html = [];
     if(json[obj[0]]){
         flatten(json[obj[0]], obj, html, "html");
-        generateHTML(html).then(out => {
+        generateHTML(html, obj[0]).then(out => {
             html = removeUnusedPlaceholders(out);
             html = replacePlaceholdersWithDefaults(html);
             html = minify(html, {
@@ -230,3 +267,6 @@ function buildHtml() {
 }
 
 buildHtml();
+
+
+// todo, warn if [PH2] doesn't exist
