@@ -1,6 +1,6 @@
 {
 	"name": "create-statik-site",
-	"version": "2.0.3",
+	"version": "2.1.0",
 	"repository": "paul-browne/create-statik-site",
 	"author": "Paul Browne",
 	"license": "MIT",
@@ -8,7 +8,9 @@
 	  "site",
 	  "static",
 	  "statik",
-	  "generator"
+	  "generator",
+	  "static-site",
+	  "statik-site"
 	],
 	"bin": "./index.js",
 	"dependencies": {

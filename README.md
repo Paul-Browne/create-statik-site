@@ -13,3 +13,9 @@ cd project-name
 npm install
 npm start
 ```
+
+When returning to the project simply run
+
+```
+npm start
+```

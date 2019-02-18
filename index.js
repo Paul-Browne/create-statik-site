@@ -10,7 +10,3 @@ console.log("cd " + process.argv[2]);
 console.log("npm install");
 console.log("npm start");
 console.log(" ");
-console.log("to restart this project simply...");
-console.log(" ");
-console.log("npm restart");
-console.log(" ");
