@@ -72,7 +72,7 @@ module.exports = {
 	                if (err) {
 	                    console.error(err);
 	                } else {
-	                    consoleTimestampedMessage(chalk.green("generated: ") + outPath);
+	                    consoleTimestampedMessage(chalk.green("generated:  ") + outPath);
 	                    addTimeStamp(inPath);
 	                }
 	            });

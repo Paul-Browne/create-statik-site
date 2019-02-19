@@ -31,19 +31,19 @@ function serverSetup(protocal) {
     } else {
         http.createServer(app).listen(8888);
     }
-    utility.consoleTimestampedMessage(chalk.magenta("serving: ") + publicDirectoryName + "/ at " + protocal + "://localhost:8888");
+    utility.consoleTimestampedMessage(chalk.magenta("serving:    ") + publicDirectoryName + "/ at " + protocal + "://localhost:8888");
 }
 function startServer(){
     fs.open('./.env', 'r', (err) => {
         if (err) {
             if (err.code === 'ENOENT') {
-                utility.consoleTimestampedMessage("no .env file found");
+                utility.consoleTimestampedMessage(chalk.yellow("warning:    ") + "no .env file found");
                 serverSetup("http");
             }
         } else {
             fs.readFile('./.env', 'utf8', (err, data) => {
                 if (data.indexOf('SSL_CRT_PATH') < 0 || data.indexOf('SSL_KEY_PATH') < 0 || data.indexOf('#SSL_CRT_PATH') > 0 || data.indexOf('# SSL_CRT_PATH') > 0 || data.indexOf('#SSL_KEY_PATH') > 0 || data.indexOf('# SSL_KEY_PATH') > 0) {
-                    utility.consoleTimestampedMessage("no SSL_CRT_PATH and/or SSL_KEY_PATH found in .env file");
+                    utility.consoleTimestampedMessage(chalk.yellow("warning:    ") + "no SSL_CRT_PATH and/or SSL_KEY_PATH found in .env file");
                     serverSetup("http");
                 } else {
                     serverSetup("https");
@@ -64,7 +64,7 @@ function watching() {
         }
         build();
     })
-    utility.consoleTimestampedMessage(chalk.magenta("watching: ") + sourceDirectoryName + " directory, contentmap.json and sitemap.json");
+    utility.consoleTimestampedMessage(chalk.magenta("watching:   ") + sourceDirectoryName + " directory, contentmap.json and sitemap.json");
 }
 
 startServer();

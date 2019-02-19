@@ -206,7 +206,7 @@ function createFile(name, dir, obj) {
                 if (err) {
                     console.error(err);
                 }else{
-                    utility.consoleTimestampedMessage(chalk.green("generated: ") + publicDirectoryName + dirPath + "/" + name)
+                    utility.consoleTimestampedMessage(chalk.green("generated:  ") + publicDirectoryName + dirPath + "/" + name)
                 }
             });
         });

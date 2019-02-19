@@ -16,7 +16,7 @@ function imageMaker(obj) {
                 console.log(err);
             } else {
                 file.resize(obj.width, jimp.AUTO).quality(obj.quality).write(reformatOutputDirectory(obj.dirOut, obj.width));
-                utility.consoleTimestampedMessage(chalk.green("generated: ") + reformatOutputDirectory(obj.dirOut, obj.width));
+                utility.consoleTimestampedMessage(chalk.green("generated:  ") + reformatOutputDirectory(obj.dirOut, obj.width));
             }
         });
     } else if (!obj.width) {
@@ -25,7 +25,7 @@ function imageMaker(obj) {
                 console.log(err);
             } else {
                 file.quality(obj.quality).write(obj.dirOut);
-                utility.consoleTimestampedMessage(chalk.green("generated: ") + obj.dirOut);
+                utility.consoleTimestampedMessage(chalk.green("generated:  ") + obj.dirOut);
             }
         });
     }
