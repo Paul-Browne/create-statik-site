@@ -7,6 +7,7 @@ const minify = require('html-minifier').minify;
 const request = require('request');
 const utility = require('./utility.js');
 
+// TODO Clean up error/warning messages
 
 // template engines 
 const mustache = require('mustache');
@@ -28,7 +29,7 @@ function _request(url, template) {
             if (!error && response.statusCode === 200) {
                 resolve(body);
             } else {
-                console.log("error in '" + template + "' url: '" + url + "' not found");
+                utility.consoleTimestampedMessage(chalk.red("error in:   '") + template + "' url: '" + url + "' not found")
             }
         })
     })
@@ -206,7 +207,7 @@ function createFile(name, dir, obj) {
                 if (err) {
                     console.error(err);
                 }else{
-                    utility.consoleTimestampedMessage(chalk.green("generated:  ") + publicDirectoryName + dirPath + "/" + name)
+                    utility.consoleTimestampedMessage(chalk.yellow(utility.humanReadableFilesize(publicDirectoryName + dirPath + "/" + name)) + " " + chalk.green("generated:  ") + publicDirectoryName + dirPath + "/" + name);
                 }
             });
         });

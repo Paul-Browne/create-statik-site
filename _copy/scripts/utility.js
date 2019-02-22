@@ -5,12 +5,16 @@ const mkdirp = require('mkdirp');
 const prettier = require("prettier");
 const mime = require('mime-types');
 
+function humanReadableFilesize(path){
+	return fs.statSync(path).size > 999999 ? (fs.statSync(path).size / 1000000).toFixed(1) + " Mb" : ( fs.statSync(path).size > 999 ? (fs.statSync(path).size / 1000).toFixed(0) + " Kb" : fs.statSync(path).size + " bytes" );
+}
+
 function consoleTimestampedMessage(message){
 	var now = new Date();
 	console.log(chalk.gray(('0'+now.getHours()).slice(-2) + ":" + ('0'+now.getMinutes()).slice(-2) + ":" + ('0'+now.getSeconds()).slice(-2)) + " " + message);
 }
 function addTimeStamp(path){
-    var ts = JSON.parse(fs.readFileSync("build.json", 'utf8'));
+    var ts = JSON.parse(fs.readFileSync(".build.json", 'utf8'));
     ts[path] = ts[path] ? ts[path] : {};
     ts[path].date = {
         ms: Date.now(),
@@ -18,21 +22,23 @@ function addTimeStamp(path){
     };
     ts[path].size = {
         bytes: fs.statSync(path).size,
-        hr: fs.statSync(path).size > 999999 ? (fs.statSync(path).size / 1000000).toFixed(1) + " Mb" : ( fs.statSync(path).size > 999 ? (fs.statSync(path).size / 1000).toFixed(0) + " Kb" : fs.statSync(path).size + " bytes" )
+        hr: humanReadableFilesize(path)
     };
     //fs.writeFileSync("build.json", prettier.format(JSON.stringify(ts), {parser: "json"}) );
-    fs.writeFileSync("build.json", JSON.stringify(ts) );
+    fs.writeFileSync(".build.json", JSON.stringify(ts) );
 }
-
 module.exports = {
 	consoleTimestampedMessage: function(message){
 		consoleTimestampedMessage(message);
+	},
+	humanReadableFilesize: function(path){
+		return humanReadableFilesize(path);
 	},
 	addTimeStamp: function(path){
 		addTimeStamp(path);
 	},
 	fileHasBeenChangedSinceLastBuild: function(path){
-	    var ts = JSON.parse(fs.readFileSync("build.json", 'utf8'));
+	    var ts = JSON.parse(fs.readFileSync(".build.json", 'utf8'));
 	    if(!ts[path]){
 	        return true;
 	    }else if ( fs.statSync(path).mtimeMs > ts[path].date.ms || fs.statSync(path).ctimeMs > ts[path].date.ms ) {
@@ -72,7 +78,7 @@ module.exports = {
 	                if (err) {
 	                    console.error(err);
 	                } else {
-	                    consoleTimestampedMessage(chalk.green("generated:  ") + outPath);
+	                    consoleTimestampedMessage(chalk.yellow(humanReadableFilesize(outPath)) + " " + chalk.green("generated:  ") + outPath);
 	                    addTimeStamp(inPath);
 	                }
 	            });

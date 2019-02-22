@@ -8,6 +8,7 @@ const express = require('express');
 const env = require('dotenv');
 const chokidar = require('chokidar');
 const chalk = require('chalk');
+/*zzz*/
 env.config();
 
 const sourceDirectoryName = process.env.SOURCE_DIR_NAME || 'src';
@@ -53,16 +54,21 @@ function startServer(){
     })
 }
 
+
 function watching() {
-    var watchSource = chokidar.watch([sourceDirectoryName, 'contentmap.json', 'sitemap.json'], {
+    var watcher = chokidar.watch([sourceDirectoryName, 'contentmap.json', 'sitemap.json'], {
         persistent: true,
         ignoreInitial: true
     });
-    watchSource.on('all', (event, path) => {
+    var time = Date.now();
+    watcher.on('all', (event, path) => {
         if (event !== "unlink" && event !== "unlinkDir") {
             utility.prettify(path);
         }
-        build();
+        if(Date.now() > (time + 1000) ){
+            time = Date.now();
+            build(0);
+        }
     })
     utility.consoleTimestampedMessage(chalk.magenta("watching:   ") + sourceDirectoryName + " directory, contentmap.json and sitemap.json");
 }
