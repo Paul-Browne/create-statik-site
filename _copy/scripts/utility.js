@@ -6,7 +6,13 @@ const prettier = require("prettier");
 const mime = require('mime-types');
 
 function humanReadableFilesize(path){
-	return fs.statSync(path).size > 999999 ? (fs.statSync(path).size / 1000000).toFixed(1) + " Mb" : ( fs.statSync(path).size > 999 ? (fs.statSync(path).size / 1000).toFixed(0) + " Kb" : fs.statSync(path).size + " bytes" );
+	if(fs.statSync(path).size > 999999){
+		return (fs.statSync(path).size / 1000000).toFixed(1) + " Mb";
+	}else if (fs.statSync(path).size > 999) {
+		return (fs.statSync(path).size / 1000).toFixed(0) + " Kb";
+	}else {
+		return fs.statSync(path).size + " bytes";
+	}
 }
 
 function consoleTimestampedMessage(message){
@@ -78,7 +84,7 @@ module.exports = {
 	                if (err) {
 	                    console.error(err);
 	                } else {
-	                    consoleTimestampedMessage(chalk.yellow(humanReadableFilesize(outPath)) + " " + chalk.green("generated:  ") + outPath);
+	                    consoleTimestampedMessage(chalk.green("built: ") + outPath + " " + chalk.yellow(humanReadableFilesize(outPath)));
 	                    addTimeStamp(inPath);
 	                }
 	            });

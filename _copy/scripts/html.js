@@ -7,8 +7,6 @@ const minify = require('html-minifier').minify;
 const request = require('request');
 const utility = require('./utility.js');
 
-// TODO Clean up error/warning messages
-
 // template engines 
 const mustache = require('mustache');
 const handlebars = require('handlebars');
@@ -29,7 +27,7 @@ function _request(url, template) {
             if (!error && response.statusCode === 200) {
                 resolve(body);
             } else {
-                utility.consoleTimestampedMessage(chalk.red("error in:   '") + template + "' url: '" + url + "' not found")
+                utility.consoleTimestampedMessage(chalk.red("error: ") + "'" + url + "' not found (referenced in '" + template + "')");
             }
         })
     })
@@ -58,7 +56,12 @@ function removeUnusedPlaceholders(html) {
 function replacePlaceholders(filename, obj) {
     if (filename.match(/\[\w*\d+\]/g)) {
         filename.match(/\[\w*\d+\]/g).forEach(function(ph, index) {
-            filename = filename.replace(ph, obj[ph.replace(/\D/g, "")]);
+            if(obj[ph.replace(/\D/g, "")]){
+                filename = filename.replace(ph, obj[ph.replace(/\D/g, "")]);
+            }else{
+                utility.consoleTimestampedMessage(chalk.yellow("warning: ") + "'" + obj[0] + "' references '" + ph + "' but only " + (obj.length - 1) + ( (obj.length - 1) < 2 ? " placeholder is used" : " placeholders are used" ) );
+                filename = filename.replace(ph, "")                
+            }
         }, this)
     }
     return filename;
@@ -86,7 +89,7 @@ async function generateHTML(inHTML, temp){
                 try {
                     output = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].content + ".html", 'utf8');
                 } catch(e) {
-                    console.log("error in " + temp + " " + contentDirectoryPath + "/" + inHTML[key].content + ".html" + " not found");
+                    utility.consoleTimestampedMessage(chalk.red("error: ") + "'" + contentDirectoryPath + "/" + inHTML[key].content + ".html' not found (referenced in '" + temp + "')");
                 }
             }
         }else if(inHTML[key].engine || inHTML[key].data) {
@@ -96,7 +99,7 @@ async function generateHTML(inHTML, temp){
                 try {
                     template = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].content, 'utf8');
                 } catch(e) {
-                    console.log("error in '" + temp + "' '" + contentDirectoryPath + "/" + inHTML[key].content + "' not found");
+                    utility.consoleTimestampedMessage(chalk.red("error: ") + "'" + contentDirectoryPath + "/" + inHTML[key].content + ".html' not found (referenced in '" + temp + "')");
                 }
             }
             if (isExternal(inHTML[key].data)) {
@@ -105,14 +108,14 @@ async function generateHTML(inHTML, temp){
                 try {
                     data = fs.readFileSync(contentDirectoryPath + "/" + inHTML[key].data, 'utf8');
                 } catch(e) {
-                    console.log("error in '" + temp + "' file: '" + contentDirectoryPath + "/" + inHTML[key].data + "' not found");
+                    utility.consoleTimestampedMessage(chalk.red("error: ") + "'" + contentDirectoryPath + "/" + inHTML[key].data + ".html' not found (referenced in '" + temp + "')");
                 }
             }
             if (inHTML[key].object) {
                 if(data !== undefined && JSON.parse(data)[inHTML[key].object]){
                     data = JSON.parse(data)[inHTML[key].object];
                 }else{
-                    console.log("error in '" + temp + "' object: '" + inHTML[key].object + "' not found in '" + inHTML[key].data + "'");
+                    utility.consoleTimestampedMessage(chalk.red("error: ") + "object '" + inHTML[key].object + "' not found in '" + inHTML[key].data + "' (referenced in '" + temp + "')");
                 }
             } else {
                 if(data !== undefined){
@@ -139,8 +142,8 @@ async function generateHTML(inHTML, temp){
                 } else if (inHTML[key].engine === "art") {
                     fileContents = art.render(template, data);
                 }else{
-                    console.log("error in '" + temp + "' no such template engine named: '" + inHTML[key].engine + "'");
-                    console.log('\x1b[35m%s\x1b[0m',"use: mustache, handlebars, underscore, ejs, dot, pug or art");
+                    utility.consoleTimestampedMessage(chalk.red("error: ") + "no such template engine named: '" + inHTML[key].engine + "' (referenced in '" + temp + "')");
+                    utility.consoleTimestampedMessage(chalk.yellow("use: mustache, handlebars, underscore, ejs, dot, pug or art"));
                 }
             } else if(template !== undefined && data !== undefined) {
                 fileContents = mustache.render(template, data);
@@ -154,7 +157,7 @@ async function generateHTML(inHTML, temp){
                 }
             } catch (err) {
                 if(~inHTML[key].content.indexOf("/")){
-                    console.log("warning in '" + temp + "' '" + inHTML[key].content + "' looks like a path, but '" + contentDirectoryPath + "/" + inHTML[key].content + ".html' wasn't found");
+                    utility.consoleTimestampedMessage(chalk.yellow("warning: ") + "'" + inHTML[key].content + "' looks like a path, but '" + contentDirectoryPath + "/" + inHTML[key].content + ".html' wasn't found (referenced in '" + temp + "')");
                 }
                 fileContents = inHTML[key].content;
             }
@@ -207,12 +210,12 @@ function createFile(name, dir, obj) {
                 if (err) {
                     console.error(err);
                 }else{
-                    utility.consoleTimestampedMessage(chalk.yellow(utility.humanReadableFilesize(publicDirectoryName + dirPath + "/" + name)) + " " + chalk.green("generated:  ") + publicDirectoryName + dirPath + "/" + name);
+                    utility.consoleTimestampedMessage(chalk.green("built: ") + publicDirectoryName + dirPath + "/" + name + " " + chalk.yellow(utility.humanReadableFilesize(publicDirectoryName + dirPath + "/" + name)));
                 }
             });
         });
     }else{
-        console.log("error in sitemap.json entry: " + dirPath + "/" + name.replace(".html", "") + " the template '" + obj[0] + "' is not found in contentmap.json");
+        utility.consoleTimestampedMessage(chalk.red("error: ") + "the template '" + obj[0] + "' is not found in contentmap.json (referenced in the sitemap.json '" + dirPath + "/" + name.replace(".html", "") + "')");
     }
 }
 

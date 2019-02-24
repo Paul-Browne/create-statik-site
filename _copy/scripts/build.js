@@ -5,9 +5,6 @@ const mime = require('mime-types');
 const env = require('dotenv');
 env.config();
 
-// TODO
-// add errors for [PH2] etc
-
 const publicDirectoryName = process.env.PUBLIC_DIR_NAME || 'public';
 const sourceDirectoryName = process.env.SOURCE_DIR_NAME || 'src';
 const contentDirectoryName = process.env.CONTENT_DIR_NAME || 'content';
@@ -34,7 +31,7 @@ function init(zero){
         arr.forEach(function(element, index) {
             if (utility.fileHasBeenChangedSinceLastBuild(element)) {
                 processedAmount++;
-                utility.consoleTimestampedMessage("[" + processedAmount + "] " + chalk.yellow(utility.humanReadableFilesize(element)) + " " + chalk.cyan("processed:  ") + element);
+                utility.consoleTimestampedMessage(chalk.cyan("processed: ") + element + " " + chalk.yellow(utility.humanReadableFilesize(element)));
                 utility.addTimeStamp(element);
                 if (!htmlFuncCalled) {
                     htmlFuncCalled = true;
@@ -51,7 +48,7 @@ function init(zero){
             if (utility.fileHasBeenChangedSinceLastBuild(inDirectory)) {
                 if (inDirectory.indexOf(contentDirectoryPath) === 0) {
                     processedAmount++;
-                    utility.consoleTimestampedMessage("[" + processedAmount + "] " + chalk.yellow(utility.humanReadableFilesize(inDirectory)) + " " + chalk.cyan("processed:  ") + inDirectory);
+                    utility.consoleTimestampedMessage(chalk.cyan("processed: ") + inDirectory + " " + chalk.yellow(utility.humanReadableFilesize(inDirectory)));
                     if (!htmlFuncCalled) {
                         htmlFuncCalled = true;
                         htmlFunc();
@@ -60,41 +57,41 @@ function init(zero){
                 } else if (inDirectory.indexOf(sourceDirectoryName + '/css') === 0) {
                     if (mime.lookup(inDirectory) === 'text/css') {
                         processedAmount++;
-                        utility.consoleTimestampedMessage("[" + processedAmount + "] " + chalk.yellow(utility.humanReadableFilesize(inDirectory)) + " " + chalk.cyan("processed:  ") + inDirectory);
+                        utility.consoleTimestampedMessage(chalk.cyan("processed: ") + inDirectory + " " + chalk.yellow(utility.humanReadableFilesize(inDirectory)));
                         cssFunc(fs.readFileSync(inDirectory, 'utf8'), inDirectory, outDirectory);
                     }
                 } else if (inDirectory.indexOf(sourceDirectoryName + '/scss') === 0 || inDirectory.indexOf(sourceDirectoryName + '/sass') === 0) {
                     if (mime.lookup(inDirectory) === 'text/x-scss' || mime.lookup(inDirectory) === 'text/x-sass') {
                         processedAmount++;
-                        utility.consoleTimestampedMessage("[" + processedAmount + "] " + chalk.yellow(utility.humanReadableFilesize(inDirectory)) + " " + chalk.cyan("processed:  ") + inDirectory);
+                        utility.consoleTimestampedMessage(chalk.cyan("processed: ") + inDirectory + " " + chalk.yellow(utility.humanReadableFilesize(inDirectory)));
                         sassFunc(inDirectory, outDirectory);
                     }
                 } else if (inDirectory.indexOf(sourceDirectoryName + '/less') === 0) {
                     if (mime.lookup(inDirectory) === 'text/less') {
                         processedAmount++;
-                        utility.consoleTimestampedMessage("[" + processedAmount + "] " + chalk.yellow(utility.humanReadableFilesize(inDirectory)) + " " + chalk.cyan("processed:  ") + inDirectory);
+                        utility.consoleTimestampedMessage(chalk.cyan("processed: ") + inDirectory + " " + chalk.yellow(utility.humanReadableFilesize(inDirectory)));
                         lessFunc(fs.readFileSync(inDirectory, 'utf8'), inDirectory, outDirectory);
                     }
                 } else if (inDirectory.indexOf(sourceDirectoryName + '/js') === 0) {
                     if (mime.lookup(inDirectory) === 'application/javascript') {
                         processedAmount++;
-                        utility.consoleTimestampedMessage("[" + processedAmount + "] " + chalk.yellow(utility.humanReadableFilesize(inDirectory)) + " " + chalk.cyan("processed:  ") + inDirectory);
+                        utility.consoleTimestampedMessage(chalk.cyan("processed: ") + inDirectory + " " + chalk.yellow(utility.humanReadableFilesize(inDirectory)));
                         jsFunc(fs.readFileSync(inDirectory, 'utf8'), inDirectory, outDirectory)
                     }
                 } else if (inDirectory.indexOf(sourceDirectoryName + '/images') === 0) {
                     if (mime.lookup(inDirectory) === 'image/jpeg' || mime.lookup(inDirectory) === 'image/png' || mime.lookup(inDirectory) === 'image/gif') { // todo check gif
                         processedAmount++;
-                        utility.consoleTimestampedMessage("[" + processedAmount + "] " + chalk.yellow(utility.humanReadableFilesize(inDirectory)) + " " + chalk.cyan("processed:  ") + inDirectory);
+                        utility.consoleTimestampedMessage(chalk.cyan("processed: ") + inDirectory + " " + chalk.yellow(utility.humanReadableFilesize(inDirectory)));
                         imgFunc(inDirectory, outDirectory);
                     } else if (mime.lookup(inDirectory) === 'image/svg+xml') {
                         processedAmount++;
-                        utility.consoleTimestampedMessage("[" + processedAmount + "] " + chalk.yellow(utility.humanReadableFilesize(inDirectory)) + " " + chalk.cyan("processed:  ") + inDirectory);
+                        utility.consoleTimestampedMessage(chalk.cyan("processed: ") + inDirectory + " " + chalk.yellow(utility.humanReadableFilesize(inDirectory)));
                         // TODO: check if svg can be prettified
                         svgFunc(fs.readFileSync(inDirectory, 'utf8'), inDirectory, outDirectory);
                     }
                 } else if (inDirectory.indexOf(contentDirectoryPath) !== 0) {
                     processedAmount++;
-                    utility.consoleTimestampedMessage("[" + processedAmount + "] " + chalk.yellow(utility.humanReadableFilesize(inDirectory)) + " " + chalk.cyan("processed:  ") + inDirectory);
+                    utility.consoleTimestampedMessage(chalk.cyan("processed: ") + inDirectory + " " + chalk.yellow(utility.humanReadableFilesize(inDirectory)));
                     utility.writeOut(fs.readFileSync(inDirectory, 'utf8'), inDirectory, outDirectory);
                 }
             }

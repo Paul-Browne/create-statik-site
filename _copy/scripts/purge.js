@@ -10,7 +10,8 @@ const publicDirectoryName = process.env.PUBLIC_DIR_NAME || 'public';
 function purge(){
     fs.writeFileSync(".build.json", "{}" );
 	fs.removeSync(publicDirectoryName);
-	utility.consoleTimestampedMessage(chalk.red(publicDirectoryName + " directory deleted and build.json reset\n"));
+	utility.consoleTimestampedMessage(chalk.red("deleted: " ) + publicDirectoryName + "/");
+	utility.consoleTimestampedMessage(chalk.red("reset: " ) + ".build.json\n");
 }
 
 purge();

@@ -16,7 +16,7 @@ function imageMaker(obj) {
                 console.log(err);
             } else {
                 file.resize(obj.width, jimp.AUTO).quality(obj.quality).write(reformatOutputDirectory(obj.dirOut, obj.width), function(){
-                	utility.consoleTimestampedMessage(chalk.yellow(utility.humanReadableFilesize(reformatOutputDirectory(obj.dirOut, obj.width))) + " " + chalk.green("generated:  ") + reformatOutputDirectory(obj.dirOut, obj.width));
+                	utility.consoleTimestampedMessage(chalk.green("built: ") + reformatOutputDirectory(obj.dirOut, obj.width) + " " + chalk.yellow(utility.humanReadableFilesize(reformatOutputDirectory(obj.dirOut, obj.width))) );
                 });
             }
         });
@@ -26,7 +26,7 @@ function imageMaker(obj) {
                 console.log(err);
             } else {
                 file.quality(obj.quality).write(obj.dirOut, function(){
-                	utility.consoleTimestampedMessage(chalk.yellow(utility.humanReadableFilesize(obj.dirOut)) + " " + chalk.green("generated:  ") + obj.dirOut);
+                	utility.consoleTimestampedMessage(chalk.green("built: ") + obj.dirOut + " " + chalk.yellow(utility.humanReadableFilesize(obj.dirOut)));
                 });
             }
         });
