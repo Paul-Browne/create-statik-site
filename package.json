@@ -1,19 +1,16 @@
 {
 	"name": "create-statik-site",
-	"version": "2.2.4",
+	"version": "2.2.6",
 	"repository": "paul-browne/create-statik-site",
 	"author": "Paul Browne",
 	"license": "MIT",
 	"keywords": [
-	  "site",
-	  "static",
-	  "statik",
-	  "generator",
-	  "static-site",
-	  "statik-site"
+		"site",
+		"static",
+		"statik",
+		"generator",
+		"static-site",
+		"statik-site"
 	],
-	"bin": "./index.js",
-	"dependencies": {
-		"fs-extra": "^7.0.1"
-	}
+	"bin": "./index.js"
 }

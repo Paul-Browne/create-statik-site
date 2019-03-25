@@ -1,12 +1,20 @@
 #!/usr/bin/env node
-const fs = require('fs-extra');
-fs.copySync(process.argv[1].replace("bin/create-statik-site", "lib/node_modules/create-statik-site/_copy"), process.argv[2]);
-console.log(" ");
-console.log(process.argv[2] + " created in " + process.cwd() + "/" + process.argv[2]);
-console.log(" ");
-console.log("to get started simply...");
-console.log(" ");
-console.log("cd " + process.argv[2]);
-console.log("npm install");
-console.log("npm start");
-console.log(" ");
+var args = process.argv[2];
+var exec = require('child_process').exec;
+var gitString = "git clone https://github.com/Paul-Browne/statik-site.git";
+if(args){
+	gitString += " " + args;
+}
+
+exec(gitString, function(err, stdout, stderr){
+	var dirName = args ? args : "statik-site";
+	console.log(" ");
+	console.log("project '" + dirName + "' created in " + process.cwd() + "/" + dirName);
+	console.log(" ");
+	console.log("to get started simply...");
+	console.log(" ");
+	console.log("cd " + dirName);
+	console.log("npm install");
+	console.log("npm start");
+	console.log(" ");
+})
